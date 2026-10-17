@@ -1,4 +1,4 @@
-#include "scan.h"
+#include "connect_scan.h"
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -87,7 +87,7 @@ void *scan_thread(void *arg) {
     return NULL;
 }
 
-void scanner(char *addr, const char *host, int start_port, int end_port,
+void connect_scanner(char *addr, const char *host, int start_port, int end_port,
              float timeout, int success_only) {
     atomic_init(&current_port, start_port);
     scan_config config = {

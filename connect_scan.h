@@ -9,7 +9,7 @@ typedef struct {
 } scan_config;
 
 void *scan_thread(void *arg);
-void scanner(char *addr, const char *host, int start_port, int end_port,
+void connect_scanner(char *addr, const char *host, int start_port, int end_port,
              float timeout, int success_only);
 
 #endif

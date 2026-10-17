@@ -1,4 +1,4 @@
-#include "scan.h"
+#include "connect_scan.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +60,6 @@ int main(int argc, char **argv) {
 
     printf("Scanning %s from port %d to %d with a %.2fs timeout...\n", host,
            start_port, end_port, timeout);
-    scanner(argv[1], host, start_port, end_port, timeout, success_only);
+    connect_scanner(argv[1], host, start_port, end_port, timeout, success_only);
     exit(EXIT_SUCCESS);
 }
