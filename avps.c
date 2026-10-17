@@ -13,18 +13,19 @@ int main(int argc, char **argv) {
 
     int opt;
     int option_index = 0;
-
     int start_port = 1;
     int end_port = 65535;
     float timeout = 1.0;
+    int success_only = 0;
     const char *host = NULL;
 
     static struct option long_options[] = {
+        {"success-only", no_argument, 0, 's'},
         {"range", required_argument, 0, 'r'},
         {"timeout", required_argument, 0, 't'},
         {0, 0, 0, 0}};
 
-    while ((opt = getopt_long(argc, argv, "r:t:", long_options,
+    while ((opt = getopt_long(argc, argv, "r:t:s", long_options,
                               &option_index)) != -1) {
 
         switch (opt) {
@@ -39,6 +40,10 @@ int main(int argc, char **argv) {
 
         case 't':
             timeout = atof(optarg);
+            break;
+
+        case 's':
+            success_only = 1;
             break;
 
         default:
@@ -66,11 +71,12 @@ int main(int argc, char **argv) {
     int sockfd, status;
     struct sockaddr_in servaddr;
 
-    struct timeval tv;
-    tv.tv_sec = (int)timeout;
-    tv.tv_usec = (int)((timeout - tv.tv_sec) * 1000000);
-
     for (int port = start_port; port <= end_port; port++) {
+
+        struct timeval tv;
+        tv.tv_sec = (int)timeout;
+        tv.tv_usec = (int)((timeout - tv.tv_sec) * 1000000);
+
         if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
             fprintf(stderr, "Socket failed to be created\n");
             exit(EXIT_FAILURE);
@@ -94,10 +100,6 @@ int main(int argc, char **argv) {
             connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
         if (status == -1 && errno == EINPROGRESS) {
-            struct timeval tv;
-            tv.tv_sec = 1;
-            tv.tv_usec = 0;
-
             fd_set fdset;
             FD_ZERO(&fdset);
             FD_SET(sockfd, &fdset);
@@ -111,10 +113,14 @@ int main(int argc, char **argv) {
                 if (so_err == 0) {
                     printf("Connection successful on port %d\n", port);
                 } else {
-                    fprintf(stderr, "Connection failed on port %d\n", port);
+                    if (!success_only) {
+                        fprintf(stderr, "Connection failed on port %d\n", port);
+                    }
                 }
             } else if (select_result == 0) {
-                fprintf(stderr, "Connection timed out on port %d\n", port);
+                if (!success_only) {
+                    fprintf(stderr, "Connection timed out on port %d\n", port);
+                }
             } else {
                 fprintf(stderr, "Select error on port %d\n", port);
             }
