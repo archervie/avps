@@ -9,7 +9,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char **argv) {
 
     int opt;
     int option_index = 0;
@@ -29,27 +29,48 @@ int main(int argc, char const *argv[]) {
 
         switch (opt) {
         case 'r':
-            if (sscanf(optarg, "%d-%d", &start_port, &end_port) != 2) {
-                fprintf(stderr,
-                        "Invalid range, use start-end (e.g. 1-1000).\n");
+            if (sscanf(optarg, "%d-%d", &start_port, &end_port) != 2 ||
+                end_port < start_port) {
+                fprintf(stderr, "Invalid range, use start-end (e.g. 1-1000) "
+                                "with end > start.\n");
+                exit(EXIT_FAILURE);
             }
+            break;
 
         case 't':
             timeout = atof(optarg);
+            break;
+
+        default:
+            fprintf(stderr,
+                    "Usage: %s [-r --range start-end] [-t --timeout timeout] "
+                    "host\n",
+                    argv[0]);
+            exit(EXIT_FAILURE);
         }
     }
+
+    if (optind >= argc) {
+        fprintf(stderr, "Error: Host argument is required.\n");
+        fprintf(
+            stderr,
+            "Usage: %s [-r --range start-end] [-t --timeout timeout] host\n",
+            argv[0]);
+        exit(EXIT_FAILURE);
+    }
+    host = argv[optind];
+
+    printf("Scanning %s from port %d to %d with a %.2fs timeout...\n", host,
+           start_port, end_port, timeout);
 
     int sockfd, status;
     struct sockaddr_in servaddr;
 
-    if (argc != 2) {
-        fprintf(stderr, "Usage: avps [host]\n");
-        exit(EXIT_FAILURE);
-    } else {
-        host = argv[1];
-    }
+    struct timeval tv;
+    tv.tv_sec = (int)timeout;
+    tv.tv_usec = (int)((timeout - tv.tv_sec) * 1000000);
 
-    for (int port = 1; port < 65535; port++) {
+    for (int port = start_port; port <= end_port; port++) {
         if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
             fprintf(stderr, "Socket failed to be created\n");
             exit(EXIT_FAILURE);
@@ -88,7 +109,7 @@ int main(int argc, char const *argv[]) {
                 getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &so_err, &len);
 
                 if (so_err == 0) {
-                    fprintf(stdout, "Connection successful on port %d\n", port);
+                    printf("Connection successful on port %d\n", port);
                 } else {
                     fprintf(stderr, "Connection failed on port %d\n", port);
                 }
@@ -98,7 +119,7 @@ int main(int argc, char const *argv[]) {
                 fprintf(stderr, "Select error on port %d\n", port);
             }
         } else if (status == 0) {
-            fprintf(stdout, "Connection successful on port %d\n", port);
+            printf("Connection successful on port %d\n", port);
         }
         close(sockfd);
     }
