@@ -107,7 +107,7 @@ void connect_scanner(const char *host, int start_port, int end_port,
 
     for (int port = 0; port < end_port; port++) {
         if (scan_results[port] == 1) {
-            printf("Connected successfully on port %d\n", port);
+            printf("Connection successful on port %d\n", port);
         } else if (scan_results[port] == 2 && !success_only) {
             fprintf(stderr, "Connection failed on port %d\n", port);
         } else if (scan_results[port] == 3 && !success_only) {
