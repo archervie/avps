@@ -12,13 +12,13 @@
 #include <sys/sysinfo.h>
 #include <unistd.h>
 
-atomic_int current_port;
-atomic_int successes, timeouts, failures = 0;
-int scan_results[65535] = {0};
+static atomic_int current_port;
+static atomic_int successes, timeouts, failures = 0;
+static int scan_results[65535] = {0};
 
-void *scan_thread(void *arg) {
+void *connect_scanner_thread(void *arg) {
     int sockfd;
-    scan_config *config = (scan_config *)arg;
+    connect_scan_config *config = (connect_scan_config *)arg;
     struct sockaddr_in servaddr;
 
     while (1) {
@@ -46,7 +46,8 @@ void *scan_thread(void *arg) {
         servaddr.sin_port = htons(port);
 
         if (inet_pton(AF_INET, config->host, &servaddr.sin_addr) <= 0) {
-            fprintf(stderr, "%s is an invalid address\n", config->addr);
+            fprintf(stderr, "%s is an invalid address\n", config->host);
+            close(sockfd);
             exit(EXIT_FAILURE);
         }
 
@@ -87,17 +88,17 @@ void *scan_thread(void *arg) {
     return NULL;
 }
 
-void connect_scanner(char *addr, const char *host, int start_port, int end_port,
-             float timeout, int success_only) {
+void connect_scanner(const char *host, int start_port, int end_port,
+                     float timeout, int success_only) {
     atomic_init(&current_port, start_port);
-    scan_config config = {
-        .addr = addr, .host = host, .end_port = end_port, .timeout = timeout};
+    connect_scan_config config = {
+        .host = host, .end_port = end_port, .timeout = timeout};
 
     int number_of_threads = get_nprocs();
     pthread_t threads[number_of_threads];
 
     for (int i = 0; i < number_of_threads; i++) {
-        pthread_create(&threads[i], NULL, scan_thread, &config);
+        pthread_create(&threads[i], NULL, connect_scanner_thread, &config);
     }
 
     for (int i = 0; i < number_of_threads; i++) {
