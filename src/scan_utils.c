@@ -1,8 +1,42 @@
 #include "scan_utils.h"
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <pthread.h>
+#include <stdatomic.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+uint16_t *parse_ports(char *port_str, size_t *out_count) {
+    size_t capacity = 10;
+    size_t count = 0;
+
+    uint16_t *ports = malloc(capacity * sizeof(uint16_t));
+    if (!ports)
+        return NULL;
+
+    char *token = strtok(port_str, ",");
+    while (token != NULL) {
+        if (count >= capacity) {
+            capacity *= 2;
+            ports = realloc(ports, capacity * sizeof(uint16_t));
+            if (!ports)
+                return NULL;
+        }
+
+        int port = strtol(token, NULL, 0);
+        if (port > 0 && port <= 65535) {
+            ports[count++] = (uint16_t)port;
+        }
+
+        token = strtok(NULL, ",");
+    }
+
+    *out_count = count;
+    return ports;
+}
 
 uint32_t get_source_addr(const char *host) {
     // We create a simple datagram socket to get

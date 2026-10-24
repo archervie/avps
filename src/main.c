@@ -1,6 +1,7 @@
 #include "connect_scan.h"
 #include "stealth_scan.h"
 #include <getopt.h>
+#include <scan_utils.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,26 +14,30 @@ int main(int argc, char **argv) {
     int end_port = 65535;
     float timeout = 1.0;
     int success_only = 0;
+    size_t num_ports = 0;
+    uint16_t *user_ports = NULL;
     const char *host = NULL;
 
     static struct option long_options[] = {
         {"success-only", no_argument, 0, 's'},
+        {"known-ports", required_argument, 0, 'k'},
         {"mode", required_argument, 0, 'm'},
         {"range", required_argument, 0, 'r'},
         {"timeout", required_argument, 0, 't'},
         {0, 0, 0, 0}};
 
-    while ((opt = getopt_long(argc, argv, "m:r:t:s", long_options,
+    while ((opt = getopt_long(argc, argv, "k:m:r:t:s", long_options,
                               &option_index)) != -1) {
 
         switch (opt) {
         case 'm':
             if (mode != -1) {
-                fprintf(stderr,
-                        "Usage: %s [-m --mode mode] [-r --range start-end] [-t "
-                        "--timeout timeout] "
-                        "host\n",
-                        argv[0]);
+                fprintf(
+                    stderr,
+                    "Usage: %s [-m --mode mode] [-r --range start-end] [-t "
+                    "--timeout timeout] [-s --success-only] [-k --known-ports] "
+                    "host\n",
+                    argv[0]);
                 exit(EXIT_FAILURE);
             } else if (strcmp(optarg, "connect") == 0) {
                 mode = 0;
@@ -60,10 +65,19 @@ int main(int argc, char **argv) {
             success_only = 1;
             break;
 
+        case 'k':
+            user_ports = parse_ports(optarg, &num_ports);
+            if (!user_ports) {
+                fprintf(stderr, "Invalid list, use a comma-separated list "
+                                "(e.g. 22,80,443)\n");
+                exit(EXIT_FAILURE);
+            }
+            break;
+
         default:
             fprintf(stderr,
                     "Usage: %s [-m --mode mode] [-r --range start-end] [-t "
-                    "--timeout timeout] [-s --success-only] "
+                    "--timeout timeout] [-s --success-only] [-k --known-ports] "
                     "host\n",
                     argv[0]);
             exit(EXIT_FAILURE);
@@ -81,19 +95,28 @@ int main(int argc, char **argv) {
     }
     host = argv[optind];
 
-    printf("Scanning %s from port %d to %d with a %.2fs timeout...\n", host,
-           start_port, end_port, timeout);
+    if (!num_ports) {
+        printf("Scanning %s from port %d to %d with a %.2fs timeout...\n", host,
+               start_port, end_port, timeout);
+    } else {
+        printf("Scanning %s from %d ports with a %.2fs timeout...\n", host,
+               (int)num_ports, timeout);
+    }
+
     if (mode == 0) {
-        connect_scanner(host, start_port, end_port, timeout, success_only);
+        connect_scanner(host, start_port, end_port, timeout, success_only,
+                        user_ports, num_ports);
     } else if (mode == 1) {
-        stealth_scanner(host, start_port, end_port, timeout, success_only);
+        stealth_scanner(host, start_port, end_port, timeout, success_only,
+                        user_ports, num_ports);
     } else {
         fprintf(stderr,
                 "Usage: %s [-m --mode mode] [-r --range start-end] [-t "
-                "--timeout timeout] [-s --success-only] "
+                "--timeout timeout] [-s --success-only] [-k --known-ports] "
                 "host\n",
                 argv[0]);
         exit(EXIT_FAILURE);
     }
+    free(user_ports);
     exit(EXIT_SUCCESS);
 }
