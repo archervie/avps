@@ -31,7 +31,7 @@ void *stealth_scanner_thread(void *arg) {
             break;
         }
 
-        if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
+        if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0) {
             perror("Socket error");
             exit(EXIT_FAILURE);
         }
