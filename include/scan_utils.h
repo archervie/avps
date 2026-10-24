@@ -14,5 +14,6 @@ typedef struct {
 
 uint32_t get_source_addr(const char *host);
 unsigned short csum(unsigned short *ptr, int nbytes);
+uint16_t *parse_ports(char *port_str, size_t *out_count);
 
 #endif

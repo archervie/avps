@@ -17,17 +17,31 @@
 #include <unistd.h>
 
 static atomic_int current_port;
+static atomic_size_t current_idx;
 static atomic_int successes, timeouts, failures = 0;
 static int scan_results[65535] = {0};
 
 void *stealth_scanner_thread(void *arg) {
     int sockfd;
     stealth_scan_config *config = (stealth_scan_config *)arg;
-    while (1) {
-        int port = atomic_fetch_add(&current_port, 1);
 
-        if (port > config->end_port) {
-            break;
+    while (1) {
+        int port;
+        if (config->num_ports > 0) {
+            size_t port_idx = atomic_fetch_add(&current_idx, 1);
+
+            if (port_idx >= config->num_ports) {
+                break;
+            }
+
+            port = config->user_ports[port_idx];
+
+        } else {
+            port = atomic_fetch_add(&current_port, 1);
+
+            if (port > config->end_port) {
+                break;
+            }
         }
 
         if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_TCP)) < 0) {
@@ -182,10 +196,19 @@ void *stealth_scanner_thread(void *arg) {
 }
 
 void stealth_scanner(const char *host, int start_port, int end_port,
-                     float timeout, int success_only) {
-    atomic_init(&current_port, start_port);
-    stealth_scan_config config = {
-        .host = host, .end_port = end_port, .timeout = timeout};
+                     float timeout, int success_only, uint16_t *user_ports,
+                     size_t num_ports) {
+    if (!user_ports) {
+        atomic_init(&current_port, start_port);
+    } else {
+        atomic_init(&current_idx, 0);
+    }
+
+    stealth_scan_config config = {.host = host,
+                                  .end_port = end_port,
+                                  .timeout = timeout,
+                                  .user_ports = user_ports,
+                                  .num_ports = num_ports};
 
     int number_of_threads = get_nprocs();
     pthread_t threads[number_of_threads];
@@ -198,15 +221,29 @@ void stealth_scanner(const char *host, int start_port, int end_port,
         pthread_join(threads[i], NULL);
     }
 
-    for (int port = 0; port < end_port; port++) {
-        if (scan_results[port] == 1) {
-            printf("Connection successful on port %d\n", port);
-        } else if (scan_results[port] == 2 && !success_only) {
-            fprintf(stderr, "Connection failed on port %d\n", port);
-        } else if (scan_results[port] == 3 && !success_only) {
-            fprintf(stderr, "Connection timed out on port %d\n", port);
+    if (!num_ports) {
+        for (int port = 0; port <= end_port; port++) {
+            if (scan_results[port] == 1) {
+                printf("Connection successful on port %d\n", port);
+            } else if (scan_results[port] == 2 && !success_only) {
+                fprintf(stderr, "Connection failed on port %d\n", port);
+            } else if (scan_results[port] == 3 && !success_only) {
+                fprintf(stderr, "Connection timed out on port %d\n", port);
+            }
+        }
+    } else {
+        for (int i = 0; i < (int)num_ports; i++) {
+            int port = user_ports[i];
+            if (scan_results[port] == 1) {
+                printf("Connection successful on port %d\n", port);
+            } else if (scan_results[port] == 2 && !success_only) {
+                fprintf(stderr, "Connection failed on port %d\n", port);
+            } else if (scan_results[port] == 3 && !success_only) {
+                fprintf(stderr, "Connection timed out on port %d\n", port);
+            }
         }
     }
+
     printf("Successful connections: %d\n", successes);
     printf("Failed connections: %d\n", failures);
     printf("Timed out connections: %d\n", timeouts);
