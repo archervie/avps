@@ -1,0 +1,7 @@
+-Wall
+-Wextra
+-Werror
+-O2
+-pthread
+-g
+-Iinclude/

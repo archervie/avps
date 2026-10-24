@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
         default:
             fprintf(stderr,
                     "Usage: %s [-m --mode mode] [-r --range start-end] [-t "
-                    "--timeout timeout] "
+                    "--timeout timeout] [-s --success-only] "
                     "host\n",
                     argv[0]);
             exit(EXIT_FAILURE);
@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Error: Host argument is required.\n");
         fprintf(stderr,
                 "Usage: %s [-m --mode mode] [-r --range start-end] [-t "
-                "--timeout timeout] "
+                "--timeout timeout] [-s --success-only] "
                 "host\n",
                 argv[0]);
         exit(EXIT_FAILURE);
@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
     } else {
         fprintf(stderr,
                 "Usage: %s [-m --mode mode] [-r --range start-end] [-t "
-                "--timeout timeout] "
+                "--timeout timeout] [-s --success-only] "
                 "host\n",
                 argv[0]);
         exit(EXIT_FAILURE);

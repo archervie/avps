@@ -1,6 +1,8 @@
 #ifndef SCAN_H
 #define SCAN_H
 
+#include <sys/types.h>
+
 typedef struct {
     const char *host;
     int end_port;

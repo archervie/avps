@@ -5,6 +5,8 @@
 #include <unistd.h>
 
 uint32_t get_source_addr(const char *host) {
+    // We create a simple datagram socket to get
+    // the source address of the client machine
     int sockfd;
     struct sockaddr_in servaddr;
 
@@ -18,7 +20,6 @@ uint32_t get_source_addr(const char *host) {
     memset(&servaddr, 0, sizeof(servaddr));
 
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr(host);
     servaddr.sin_port = htons(80);
 
     if (inet_pton(AF_INET, host, &servaddr.sin_addr) <= 0) {
@@ -34,8 +35,8 @@ uint32_t get_source_addr(const char *host) {
     }
 
     struct sockaddr_in name;
-    socklen_t namelen = sizeof(name);
-    if (getsockname(sockfd, (struct sockaddr *)&name, &namelen) < 0) {
+    socklen_t name_len = sizeof(name);
+    if (getsockname(sockfd, (struct sockaddr *)&name, &name_len) < 0) {
         close(sockfd);
         return 0;
     }
@@ -45,24 +46,32 @@ uint32_t get_source_addr(const char *host) {
     return source_addr;
 }
 
-unsigned short csum(unsigned short *ptr, int nbytes) {
+unsigned short csum(unsigned short *checksum_buf, int nbytes) {
     long sum;
-    unsigned short oddbyte;
-    short answer;
+    unsigned short odd_byte;
+    short checksum;
 
+    // Creates a sum of all the 2-byte words
     sum = 0;
     while (nbytes > 1) {
-        sum += *ptr++;
+        sum += *checksum_buf++;
         nbytes -= 2;
     }
+
+    // If there's an odd number of bytes, we add
+    // a 0 to the end of sum
     if (nbytes == 1) {
-        oddbyte = 0;
-        *((u_char *)&oddbyte) = *(u_char *)ptr;
-        sum += oddbyte;
+        odd_byte = 0;
+        *((u_char *)&odd_byte) = *(u_char *)checksum_buf;
+        sum += odd_byte;
     }
 
+    // We carry over the overflow values to the end of
+    // the sum
     sum = (sum >> 16) + (sum & 0xffff);
-    sum = sum + (sum >> 16);
-    answer = (short)~sum;
-    return answer;
+    sum += (sum >> 16);
+
+    // We invert the bits of the sum
+    checksum = (short)~sum;
+    return checksum;
 }
