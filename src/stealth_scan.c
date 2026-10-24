@@ -1,7 +1,6 @@
 #include "stealth_scan.h"
 #include "scan_utils.h"
 #include <arpa/inet.h>
-// #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
