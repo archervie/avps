@@ -1,5 +1,5 @@
-#ifndef SCAN_H
-#define SCAN_H
+#ifndef STEALTH_SCAN_H
+#define STEALTH_SCAN_H
 
 #include <stdatomic.h>
 #include <stddef.h>
