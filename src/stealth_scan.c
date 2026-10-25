@@ -18,7 +18,7 @@
 
 static atomic_int current_port;
 static atomic_size_t current_idx;
-static atomic_int successes, timeouts, failures = 0;
+static int successes, timeouts, failures = 0;
 static int scan_results[65535] = {0};
 
 void *stealth_scanner_thread(void *arg) {
@@ -135,9 +135,9 @@ void *stealth_scanner_thread(void *arg) {
             perror("Sendto failed");
             close(sockfd);
             scan_results[port] = 2;
-            atomic_fetch_add(&failures, 1);
             continue;
         }
+
         fd_set fdset;
         struct timeval tv;
         char recv_buffer[4096]; // Buffer for incoming packets
@@ -150,14 +150,13 @@ void *stealth_scanner_thread(void *arg) {
             tv.tv_usec = (int)(config->timeout - tv.tv_sec) * 1000000;
 
             int select_result = select(sockfd + 1, &fdset, NULL, NULL, &tv);
+
             if (select_result < 0) {
                 perror("Select error");
                 scan_results[port] = 2;
-                atomic_fetch_add(&timeouts, 1);
                 break;
             } else if (select_result == 0) {
                 scan_results[port] = 3;
-                atomic_fetch_add(&timeouts, 1);
                 break;
             }
 
@@ -179,12 +178,10 @@ void *stealth_scanner_thread(void *arg) {
 
                     if (recv_tcp->syn == 1 && recv_tcp->ack == 1) {
                         scan_results[port] = 1;
-                        atomic_fetch_add(&successes, 1);
                     }
 
                     else if (recv_tcp->rst == 1) {
                         scan_results[port] = 2;
-                        atomic_fetch_add(&failures, 1);
                     }
                     break;
                 }
@@ -225,10 +222,17 @@ void stealth_scanner(const char *host, int start_port, int end_port,
         for (int port = 0; port <= end_port; port++) {
             if (scan_results[port] == 1) {
                 printf("Connection successful on port %d\n", port);
-            } else if (scan_results[port] == 2 && !success_only) {
-                fprintf(stderr, "Connection failed on port %d\n", port);
-            } else if (scan_results[port] == 3 && !success_only) {
-                fprintf(stderr, "Connection timed out on port %d\n", port);
+                successes++;
+            } else if (scan_results[port] == 2) {
+                failures++;
+                if (!success_only){
+                    fprintf(stderr, "Connection failed on port %d\n", port);
+                }
+            } else if (scan_results[port] == 3) {
+                timeouts++;
+                if (!success_only) {
+                    fprintf(stderr, "Connection timed out on port %d\n", port);
+                }
             }
         }
     } else {
@@ -236,10 +240,17 @@ void stealth_scanner(const char *host, int start_port, int end_port,
             int port = user_ports[i];
             if (scan_results[port] == 1) {
                 printf("Connection successful on port %d\n", port);
-            } else if (scan_results[port] == 2 && !success_only) {
-                fprintf(stderr, "Connection failed on port %d\n", port);
-            } else if (scan_results[port] == 3 && !success_only) {
-                fprintf(stderr, "Connection timed out on port %d\n", port);
+                successes++;
+            } else if (scan_results[port] == 2) {
+                failures++;
+                if (!success_only) {
+                    fprintf(stderr, "Connection failed on port %d\n", port);
+                }
+            } else if (scan_results[port] == 3) {
+                timeouts++;
+                if (!success_only) {
+                    fprintf(stderr, "Connection timed out on port %d\n", port);
+                }
             }
         }
     }
