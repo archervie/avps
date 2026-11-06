@@ -12,11 +12,10 @@ typedef struct {
     uint16_t *user_ports;
     size_t num_ports;
     atomic_size_t current_index;
-} stealth_scan_config;
+} fin_scan_config;
 
-void *stealth_scanner_thread(void *arg);
-void stealth_scanner(const char *host, int start_port, int end_port,
-                     float timeout, int success_only, uint16_t *user_ports,
-                     size_t num_ports);
+void *fin_scanner_thread(void *arg);
+void fin_scanner(const char *host, int start_port, int end_port, float timeout,
+                 int success_only, uint16_t *user_ports, size_t num_ports);
 
 #endif

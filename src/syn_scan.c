@@ -1,4 +1,4 @@
-#include "stealth_scan.h"
+#include "syn_scan.h"
 #include "scan_utils.h"
 #include <arpa/inet.h>
 #include <fcntl.h>
@@ -21,9 +21,9 @@ static atomic_size_t current_idx;
 static int successes, timeouts, failures = 0;
 static int scan_results[65535] = {0};
 
-void *stealth_scanner_thread(void *arg) {
+void *syn_scanner_thread(void *arg) {
     int sockfd;
-    stealth_scan_config *config = (stealth_scan_config *)arg;
+    syn_scan_config *config = (syn_scan_config *)arg;
 
     while (1) {
         int port;
@@ -192,26 +192,25 @@ void *stealth_scanner_thread(void *arg) {
     return NULL;
 }
 
-void stealth_scanner(const char *host, int start_port, int end_port,
-                     float timeout, int success_only, uint16_t *user_ports,
-                     size_t num_ports) {
+void syn_scanner(const char *host, int start_port, int end_port, float timeout,
+                 int success_only, uint16_t *user_ports, size_t num_ports) {
     if (!user_ports) {
         atomic_init(&current_port, start_port);
     } else {
         atomic_init(&current_idx, 0);
     }
 
-    stealth_scan_config config = {.host = host,
-                                  .end_port = end_port,
-                                  .timeout = timeout,
-                                  .user_ports = user_ports,
-                                  .num_ports = num_ports};
+    syn_scan_config config = {.host = host,
+                              .end_port = end_port,
+                              .timeout = timeout,
+                              .user_ports = user_ports,
+                              .num_ports = num_ports};
 
     int number_of_threads = get_nprocs();
     pthread_t threads[number_of_threads];
 
     for (int i = 0; i < number_of_threads; i++) {
-        pthread_create(&threads[i], NULL, stealth_scanner_thread, &config);
+        pthread_create(&threads[i], NULL, syn_scanner_thread, &config);
     }
 
     for (int i = 0; i < number_of_threads; i++) {
@@ -225,7 +224,7 @@ void stealth_scanner(const char *host, int start_port, int end_port,
                 successes++;
             } else if (scan_results[port] == 2) {
                 failures++;
-                if (!success_only){
+                if (!success_only) {
                     fprintf(stderr, "Connection failed on port %d\n", port);
                 }
             } else if (scan_results[port] == 3) {

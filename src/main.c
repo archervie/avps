@@ -1,5 +1,6 @@
 #include "connect_scan.h"
-#include "stealth_scan.h"
+#include "fin_scan.h"
+#include "syn_scan.h"
 #include <getopt.h>
 #include <scan_utils.h>
 #include <stdio.h>
@@ -41,10 +42,13 @@ int main(int argc, char **argv) {
                 exit(EXIT_FAILURE);
             } else if (strcmp(optarg, "connect") == 0) {
                 mode = 0;
-            } else if (strcmp(optarg, "stealth") == 0) {
+            } else if (strcmp(optarg, "syn") == 0) {
                 mode = 1;
+            } else if (strcmp(optarg, "fin") == 0) {
+                mode = 2;
             } else {
-                fprintf(stderr, "Invalid mode, use either connect or stealth.");
+                fprintf(stderr, "Invalid mode, use either connect, syn or fin. "
+                                "Default is connect");
                 exit(EXIT_FAILURE);
             }
             break;
@@ -103,12 +107,15 @@ int main(int argc, char **argv) {
                (int)num_ports, timeout);
     }
 
-    if (mode == 0) {
+    if (mode == 0 || mode == -1) {
         connect_scanner(host, start_port, end_port, timeout, success_only,
                         user_ports, num_ports);
     } else if (mode == 1) {
-        stealth_scanner(host, start_port, end_port, timeout, success_only,
-                        user_ports, num_ports);
+        syn_scanner(host, start_port, end_port, timeout, success_only,
+                    user_ports, num_ports);
+    } else if (mode == 2) {
+        fin_scanner(host, start_port, end_port, timeout, success_only,
+                    user_ports, num_ports);
     } else {
         fprintf(stderr,
                 "Usage: %s [-m --mode mode] [-r --range start-end] [-t "
@@ -117,6 +124,7 @@ int main(int argc, char **argv) {
                 argv[0]);
         exit(EXIT_FAILURE);
     }
+
     free(user_ports);
     exit(EXIT_SUCCESS);
 }
