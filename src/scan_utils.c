@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 uint16_t *parse_ports(char *port_str, size_t *out_count) {
+    // This function parses the port list given by the -k option
     size_t capacity = 10;
     size_t count = 0;
 

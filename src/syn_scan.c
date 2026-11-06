@@ -220,12 +220,12 @@ void syn_scanner(const char *host, int start_port, int end_port, float timeout,
     if (!num_ports) {
         for (int port = 0; port <= end_port; port++) {
             if (scan_results[port] == 1) {
-                printf("Connection successful on port %d\n", port);
+                printf("SYN-ACK received on port %d\n", port);
                 successes++;
             } else if (scan_results[port] == 2) {
                 failures++;
                 if (!success_only) {
-                    fprintf(stderr, "Connection failed on port %d\n", port);
+                    fprintf(stderr, "RST received on port %d\n", port);
                 }
             } else if (scan_results[port] == 3) {
                 timeouts++;
@@ -238,12 +238,12 @@ void syn_scanner(const char *host, int start_port, int end_port, float timeout,
         for (int i = 0; i < (int)num_ports; i++) {
             int port = user_ports[i];
             if (scan_results[port] == 1) {
-                printf("Connection successful on port %d\n", port);
+                printf("SYN-ACK received on port %d\n", port);
                 successes++;
             } else if (scan_results[port] == 2) {
                 failures++;
                 if (!success_only) {
-                    fprintf(stderr, "Connection failed on port %d\n", port);
+                    fprintf(stderr, "RST received on port %d\n", port);
                 }
             } else if (scan_results[port] == 3) {
                 timeouts++;
@@ -254,8 +254,8 @@ void syn_scanner(const char *host, int start_port, int end_port, float timeout,
         }
     }
 
-    printf("Successful connections: %d\n", successes);
-    printf("Failed connections: %d\n", failures);
+    printf("Successful responses: %d\n", successes);
+    printf("Failed responses: %d\n", failures);
     printf("Timed out connections: %d\n", timeouts);
     printf("Scan complete\n");
 }

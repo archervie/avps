@@ -1,5 +1,5 @@
 #include "connect_scan.h"
-#include "fin_scan.h"
+#include "fn_scan.h"
 #include "syn_scan.h"
 #include <getopt.h>
 #include <scan_utils.h>
@@ -7,10 +7,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+void print_err_msg(char *name);
+
 int main(int argc, char **argv) {
     int opt;
     int option_index = 0;
-    int mode = -1;
+    int mode = 0;
     int start_port = 1;
     int end_port = 65535;
     float timeout = 1.0;
@@ -32,25 +34,21 @@ int main(int argc, char **argv) {
 
         switch (opt) {
         case 'm':
-            if (mode != -1) {
-                fprintf(
-                    stderr,
-                    "Usage: %s [-m --mode mode] [-r --range start-end] [-t "
-                    "--timeout timeout] [-s --success-only] [-k --known-ports] "
-                    "host\n",
-                    argv[0]);
-                exit(EXIT_FAILURE);
-            } else if (strcmp(optarg, "connect") == 0) {
+            if (strcmp(optarg, "connect") == 0) {
                 mode = 0;
             } else if (strcmp(optarg, "syn") == 0) {
                 mode = 1;
             } else if (strcmp(optarg, "fin") == 0) {
                 mode = 2;
+            } else if (strcmp(optarg, "null") == 0) {
+                mode = 3;
             } else {
-                fprintf(stderr, "Invalid mode, use either connect, syn or fin. "
-                                "Default is connect");
+                fprintf(stderr,
+                        "Invalid mode, use either connect, syn, fin or null. "
+                        "Default is connect");
                 exit(EXIT_FAILURE);
             }
+            printf("Using %s scan...\n", optarg);
             break;
         case 'r':
             if (sscanf(optarg, "%d-%d", &start_port, &end_port) != 2 ||
@@ -79,31 +77,30 @@ int main(int argc, char **argv) {
             break;
 
         default:
-            fprintf(stderr,
-                    "Usage: %s [-m --mode mode] [-r --range start-end] [-t "
-                    "--timeout timeout] [-s --success-only] [-k --known-ports] "
-                    "host\n",
-                    argv[0]);
+            print_err_msg(argv[0]);
             exit(EXIT_FAILURE);
         }
     }
 
     if (optind >= argc) {
         fprintf(stderr, "Error: Host argument is required.\n");
-        fprintf(stderr,
-                "Usage: %s [-m --mode mode] [-r --range start-end] [-t "
-                "--timeout timeout] [-s --success-only] "
-                "host\n",
-                argv[0]);
+        print_err_msg(argv[0]);
         exit(EXIT_FAILURE);
     }
     host = argv[optind];
 
+    if (mode == 0) {
+        printf("Using connect scan...\n");
+    }
+
     if (!num_ports) {
         printf("Scanning %s from port %d to %d with a %.2fs timeout...\n", host,
                start_port, end_port, timeout);
+    } else if (num_ports == 1) {
+        printf("Scanning %s through %d port with a %.2fs timeout...\n", host,
+               (int)num_ports, timeout);
     } else {
-        printf("Scanning %s from %d ports with a %.2fs timeout...\n", host,
+        printf("Scanning %s through %d ports with a %.2fs timeout...\n", host,
                (int)num_ports, timeout);
     }
 
@@ -113,18 +110,22 @@ int main(int argc, char **argv) {
     } else if (mode == 1) {
         syn_scanner(host, start_port, end_port, timeout, success_only,
                     user_ports, num_ports);
-    } else if (mode == 2) {
-        fin_scanner(host, start_port, end_port, timeout, success_only,
-                    user_ports, num_ports);
+    } else if (mode == 2 || mode == 3) {
+        fn_scanner(host, start_port, end_port, timeout, success_only,
+                   user_ports, num_ports, mode);
     } else {
-        fprintf(stderr,
-                "Usage: %s [-m --mode mode] [-r --range start-end] [-t "
-                "--timeout timeout] [-s --success-only] [-k --known-ports] "
-                "host\n",
-                argv[0]);
+        print_err_msg(argv[0]);
         exit(EXIT_FAILURE);
     }
 
     free(user_ports);
     exit(EXIT_SUCCESS);
+}
+
+void print_err_msg(char *name) {
+    fprintf(stderr,
+            "Usage: %s [-m --mode mode] [-r --range start-end] [-t "
+            "--timeout timeout] [-s --success-only] [-k --known-ports] "
+            "host\n",
+            name);
 }

@@ -1,4 +1,4 @@
-#include "fin_scan.h"
+#include "fn_scan.h"
 #include "scan_utils.h"
 #include <arpa/inet.h>
 #include <fcntl.h>
@@ -21,9 +21,9 @@ static atomic_size_t current_idx;
 static int successes, failures = 0;
 static int scan_results[65535] = {0};
 
-void *fin_scanner_thread(void *arg) {
+void *fn_scanner_thread(void *arg) {
     int sockfd;
-    fin_scan_config *config = (fin_scan_config *)arg;
+    fn_scan_config *config = (fn_scan_config *)arg;
 
     while (1) {
         int port;
@@ -101,7 +101,13 @@ void *fin_scanner_thread(void *arg) {
         tcp_header->psh = 0;
         tcp_header->rst = 0;
         tcp_header->syn = 0;
-        tcp_header->fin = 1;
+
+        // mode 2 is for FIN, mode 3 is for null
+        if (config->mode == 2) {
+            tcp_header->fin = 1;
+        } else {
+            tcp_header->fin = 0;
+        }
         tcp_header->window = htons(5840);
         tcp_header->check = 0;
 
@@ -189,25 +195,27 @@ void *fin_scanner_thread(void *arg) {
     return NULL;
 }
 
-void fin_scanner(const char *host, int start_port, int end_port, float timeout,
-                 int success_only, uint16_t *user_ports, size_t num_ports) {
+void fn_scanner(const char *host, int start_port, int end_port, float timeout,
+                int success_only, uint16_t *user_ports, size_t num_ports,
+                int mode) {
     if (!user_ports) {
         atomic_init(&current_port, start_port);
     } else {
         atomic_init(&current_idx, 0);
     }
 
-    fin_scan_config config = {.host = host,
-                              .end_port = end_port,
-                              .timeout = timeout,
-                              .user_ports = user_ports,
-                              .num_ports = num_ports};
+    fn_scan_config config = {.host = host,
+                             .end_port = end_port,
+                             .timeout = timeout,
+                             .user_ports = user_ports,
+                             .num_ports = num_ports,
+                             .mode = mode};
 
     int number_of_threads = get_nprocs();
     pthread_t threads[number_of_threads];
 
     for (int i = 0; i < number_of_threads; i++) {
-        pthread_create(&threads[i], NULL, fin_scanner_thread, &config);
+        pthread_create(&threads[i], NULL, fn_scanner_thread, &config);
     }
 
     for (int i = 0; i < number_of_threads; i++) {
@@ -217,12 +225,12 @@ void fin_scanner(const char *host, int start_port, int end_port, float timeout,
     if (!num_ports) {
         for (int port = 0; port <= end_port; port++) {
             if (scan_results[port] == 1) {
-                printf("No response received on port %d\n", port);
+                printf("No RST received on port %d\n", port);
                 successes++;
             } else if (scan_results[port] == 2) {
                 failures++;
                 if (!success_only) {
-                    fprintf(stderr, "Response received on port %d\n", port);
+                    fprintf(stderr, "RST received on port %d\n", port);
                 }
             }
         }
@@ -231,12 +239,12 @@ void fin_scanner(const char *host, int start_port, int end_port, float timeout,
         for (int i = 0; i < (int)num_ports; i++) {
             int port = user_ports[i];
             if (scan_results[port] == 1) {
-                printf("No response received on port %d\n", port);
+                printf("No RST received on port %d\n", port);
                 successes++;
             } else if (scan_results[port] == 2) {
                 failures++;
                 if (!success_only) {
-                    fprintf(stderr, "Response received on port %d\n", port);
+                    fprintf(stderr, "RST received on port %d\n", port);
                 }
             }
         }
