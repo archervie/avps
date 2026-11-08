@@ -6,9 +6,11 @@ avps is a high-performance, multithreaded IPv4 port scanner written in C. It use
 
 - **Multithreaded Execution:** Automatically detects the number of available CPU cores and spawns optimized worker threads to maximize scanning throughput.
 - **Multiple Scan Modes:**
-  - Connect Scan (`-m connect`): Completes the full TCP three-way handshake using standard system socket APIs.
-  - Stealth Scan (`-m stealth`): Constructs raw IPv4 and TCP SYN packets to identify open ports without completing the full connection, minimizing logs on the target system (requires root/sudo to run).
-- **Flexible Targeting:** Scan custom ranges (e.g., 1-1024) or a comma-separated list of known ports (e.g., 22,80,443).
+  - TCP Connect Scan (`-m connect`): Completes the full TCP three-way handshake using standard system socket APIs.
+  - TCP SYN Scan (`-m syn`): Constructs raw IPv4 and TCP SYN packets to identify open ports without completing the full connection, minimizing logs on the target system (requires root/sudo to run).
+  - TCP FIN Scan (`-m fin`): Constructs raw IPv4 and TCP FIN packets to find any open or filtered ports (requires root/sudo to run).
+  - TCP Null Scan (`-m null`): Constructs raw IPv4 and TCP packets with no flags set to find any open or filtered ports (requires root/sudo to run). 
+- **Flexible Targeting:** Scan custom ranges (e.g., 1-1024) or a comma-separated list of user-specified ports (e.g., 22,80,443).
 - **Configurable Timeouts:** Adjust the timeout duration per connection to account for network latency.
 
 ## Prerequisites
@@ -31,11 +33,11 @@ make
 ## Usage
 ```./bin/avps [-m --mode mode] [-r --range start-end] [-t --timeout timeout] [-s --success-only] [-k --known-ports] host```
 
-- **-m --mode**: Choose between 'connect' or 'stealth' depending on the type of scan you want.
+- **-m --mode**: Choose between the list of supported scans.
 - **-r --range**: Choose a range in the format of start-end (e.g. 1-1024) where end > start. This is the range of ports to scan.
 - **-t --timeout**: Choose the timeout for the packets before the program moves on. Use a floating point number for this.
 - **-s --success-only**: Choose to select only the successful connections. Useful if scanning a large number of ports.
-- **-k --known-ports**: Scan through a list of user-inputted ports instead of a range. Do so through a comma-separated list (e.g. 22,80,443).
+- **-k --known-ports**: Scan through a list of user-specified ports instead of a range. Do so through a comma-separated list (e.g. 22,80,443).
 
 Do note that -k overpowers -r due to how the scanner is programmed.
 
