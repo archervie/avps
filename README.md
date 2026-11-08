@@ -45,8 +45,8 @@ Do note that -k overpowers -r due to how the scanner is programmed.
 1. ```./bin/avps -m connect -r 1-1000 -s 192.168.1.1```
 This performs a connect scan from ports 1 to 1000 on 192.168.1.1.
 
-2. ```sudo ./bin/avps -m stealth -k 22,80,443,8080 192.168.1.1```
-This performs a stealth scan on ports 22, 80, 443, and 8080 on 192.168.1.1.
+2. ```sudo ./bin/avps -m syn -k 22,80,443,8080 192.168.1.1```
+This performs a SYN scan on ports 22, 80, 443, and 8080 on 192.168.1.1.
 
 3. ```./bin/avps -m connect -t 0.1 127.0.0.1```
 This performs a connect scan from ports 1 to 65,535 with a timeout of 0.1s on 127.0.0.1.
