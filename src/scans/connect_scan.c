@@ -1,9 +1,9 @@
 #include "connect_scan.h"
+#include "scan_utils.h"
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include <scan_utils.h>
 #include <stdatomic.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -22,11 +22,12 @@ static int scan_results[65535] = {0};
 
 void *connect_scanner_thread(void *arg) {
     int sockfd;
-    connect_scan_config *config = (connect_scan_config *)arg;
-    struct sockaddr_in servaddr;
+    scan_config *config = (scan_config *)arg;
 
     while (1) {
-        int port;
+        uint32_t dest_port;
+        struct sockaddr_in servaddr;
+
         if (config->num_ports > 0) {
             size_t port_idx = atomic_fetch_add(&current_idx, 1);
 
@@ -34,12 +35,12 @@ void *connect_scanner_thread(void *arg) {
                 break;
             }
 
-            port = config->user_ports[port_idx];
+            dest_port = config->user_ports[port_idx];
 
         } else {
-            port = atomic_fetch_add(&current_port, 1);
+            dest_port = atomic_fetch_add(&current_port, 1);
 
-            if (port > config->end_port) {
+            if (dest_port > config->end_port) {
                 break;
             }
         }
@@ -58,14 +59,13 @@ void *connect_scanner_thread(void *arg) {
 
         memset(&servaddr, 0, sizeof(servaddr));
 
-        servaddr.sin_family = AF_INET;
-        servaddr.sin_port = htons(port);
-
         if (inet_pton(AF_INET, config->host, &servaddr.sin_addr) <= 0) {
             fprintf(stderr, "%s is an invalid address\n", config->host);
-            close(sockfd);
             exit(EXIT_FAILURE);
         }
+
+        servaddr.sin_family = AF_INET;
+        servaddr.sin_port = htons(dest_port);
 
         int status =
             connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
@@ -82,21 +82,21 @@ void *connect_scanner_thread(void *arg) {
                 getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &so_err, &len);
 
                 if (so_err == 0) {
-                    scan_results[port] = 1;
+                    scan_results[dest_port] = 1;
                     atomic_fetch_add(&successes, 1);
                 } else {
-                    scan_results[port] = 2;
+                    scan_results[dest_port] = 2;
                     atomic_fetch_add(&failures, 1);
                 }
             } else if (select_result == 0) {
-                scan_results[port] = 3;
+                scan_results[dest_port] = 3;
                 atomic_fetch_add(&timeouts, 1);
             } else {
-                scan_results[port] = 2;
+                scan_results[dest_port] = 2;
                 atomic_fetch_add(&failures, 1);
             }
         } else if (status == 0) {
-            scan_results[port] = 2;
+            scan_results[dest_port] = 1;
             atomic_fetch_add(&successes, 1);
         }
         close(sockfd);
@@ -104,7 +104,7 @@ void *connect_scanner_thread(void *arg) {
     return NULL;
 }
 
-void connect_scanner(const char *host, int start_port, int end_port,
+void connect_scanner(const char *host, uint32_t start_port, uint32_t end_port,
                      float timeout, int success_only, uint16_t *user_ports,
                      size_t num_ports) {
     if (!user_ports) {
@@ -113,11 +113,11 @@ void connect_scanner(const char *host, int start_port, int end_port,
         atomic_init(&current_idx, 0);
     }
 
-    connect_scan_config config = {.host = host,
-                                  .end_port = end_port,
-                                  .timeout = timeout,
-                                  .user_ports = user_ports,
-                                  .num_ports = num_ports};
+    scan_config config = {.host = host,
+                          .end_port = end_port,
+                          .timeout = timeout,
+                          .user_ports = user_ports,
+                          .num_ports = num_ports};
 
     int number_of_threads = get_nprocs();
     pthread_t threads[number_of_threads];
@@ -131,7 +131,7 @@ void connect_scanner(const char *host, int start_port, int end_port,
     }
 
     if (!num_ports) {
-        for (int port = 1; port < end_port; port++) {
+        for (uint32_t port = 1; port < end_port; port++) {
             if (scan_results[port] == 1) {
                 printf("Connection successful on port %d\n", port);
             } else if (scan_results[port] == 2 && !success_only) {

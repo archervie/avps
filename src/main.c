@@ -1,8 +1,10 @@
 #include "connect_scan.h"
-#include "fn_scan.h"
+#include "fin_scan.h"
+#include "null_scan.h"
 #include "syn_scan.h"
+#include "utils.h"
 #include <getopt.h>
-#include <scan_utils.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,7 +19,7 @@ int main(int argc, char **argv) {
     int end_port = 65535;
     float timeout = 1.0;
     int success_only = 0;
-    size_t num_ports = 0;
+    uint16_t num_ports = 0;
     uint16_t *user_ports = NULL;
     const char *host = NULL;
 
@@ -48,7 +50,6 @@ int main(int argc, char **argv) {
                         "Default is connect");
                 exit(EXIT_FAILURE);
             }
-            printf("Using %s scan...\n", optarg);
             break;
         case 'r':
             if (sscanf(optarg, "%d-%d", &start_port, &end_port) != 2 ||
@@ -89,10 +90,6 @@ int main(int argc, char **argv) {
     }
     host = argv[optind];
 
-    if (mode == 0) {
-        printf("Using connect scan...\n");
-    }
-
     if (!num_ports) {
         printf("Scanning %s from port %d to %d with a %.2fs timeout...\n", host,
                start_port, end_port, timeout);
@@ -104,16 +101,24 @@ int main(int argc, char **argv) {
                (int)num_ports, timeout);
     }
 
-    if (mode == 0 || mode == -1) {
+    switch (mode) {
+    case 0:
         connect_scanner(host, start_port, end_port, timeout, success_only,
                         user_ports, num_ports);
-    } else if (mode == 1) {
+        break;
+    case 1:
         syn_scanner(host, start_port, end_port, timeout, success_only,
                     user_ports, num_ports);
-    } else if (mode == 2 || mode == 3) {
-        fn_scanner(host, start_port, end_port, timeout, success_only,
-                   user_ports, num_ports, mode);
-    } else {
+        break;
+    case 2:
+        fin_scanner(host, start_port, end_port, timeout, success_only,
+                    user_ports, num_ports);
+        break;
+    case 3:
+        null_scanner(host, start_port, end_port, timeout, success_only,
+                     user_ports, num_ports);
+        break;
+    default:
         print_err_msg(argv[0]);
         exit(EXIT_FAILURE);
     }

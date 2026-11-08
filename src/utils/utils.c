@@ -1,4 +1,4 @@
-#include "scan_utils.h"
+#include "utils.h"
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <pthread.h>
@@ -7,28 +7,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <unistd.h>
 
-uint16_t *parse_ports(char *port_str, size_t *out_count) {
+uint16_t *parse_ports(char *port_str, uint16_t *out_count) {
     // This function parses the port list given by the -k option
-    size_t capacity = 10;
     size_t count = 0;
 
-    uint16_t *ports = malloc(capacity * sizeof(uint16_t));
-    if (!ports)
-        return NULL;
+    uint16_t *ports = malloc(65535 * (sizeof(uint16_t)));
+    if (!ports) {
+        perror("Memory error");
+        exit(EXIT_FAILURE);
+    }
 
     char *token = strtok(port_str, ",");
     while (token != NULL) {
-        if (count >= capacity) {
-            capacity *= 2;
-            ports = realloc(ports, capacity * sizeof(uint16_t));
-            if (!ports)
-                return NULL;
+        if (count >= 65535) {
+            break;
         }
 
-        int port = strtol(token, NULL, 0);
-        if (port > 0 && port <= 65535) {
+        char *end_ptr;
+        long port = strtol(token, &end_ptr, 10);
+        if (end_ptr == token || *end_ptr != '\0' || port <= 0 || port > 65535) {
+            fprintf(stderr, "%d is an invalid port", (int)port);
+            free(ports);
+            exit(EXIT_FAILURE);
+        } else {
             ports[count++] = (uint16_t)port;
         }
 
@@ -40,8 +44,8 @@ uint16_t *parse_ports(char *port_str, size_t *out_count) {
 }
 
 uint32_t get_source_addr(const char *host) {
-    // We create a simple datagram socket to get
-    // the source address of the client machine
+    // This function retrieves the source address of the
+    // client machine using a dummy UDP packet.
     int sockfd;
     struct sockaddr_in servaddr;
 
@@ -82,11 +86,13 @@ uint32_t get_source_addr(const char *host) {
 }
 
 unsigned short csum(unsigned short *checksum_buf, int nbytes) {
+    // This function performs the checksum required for the TCP headers as
+    // directed by RFC 9293. Comments are made below to show the algorithm.
     long sum;
     unsigned short odd_byte;
     short checksum;
 
-    // Creates a sum of all the 2-byte words
+    // Create a sum of all the 2-byte words
     sum = 0;
     while (nbytes > 1) {
         sum += *checksum_buf++;
@@ -101,12 +107,13 @@ unsigned short csum(unsigned short *checksum_buf, int nbytes) {
         sum += odd_byte;
     }
 
-    // We carry over the overflow values to the end of
+    // Carry over the overflow values to the end of
     // the sum
     sum = (sum >> 16) + (sum & 0xffff);
     sum += (sum >> 16);
 
-    // We invert the bits of the sum
+    // Invert the bits of the sum to receive the final
+    // checksum
     checksum = (short)~sum;
     return checksum;
 }

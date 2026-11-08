@@ -1,19 +1,25 @@
 #ifndef SCAN_UTILS_H
 #define SCAN_UTILS_H
 
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <stdatomic.h>
 #include <stdint.h>
-#include <unistd.h>
+#include <sys/types.h>
 
 typedef struct {
-    uint32_t source_address;
-    uint32_t dest_address;
-    uint8_t placeholder;
-    uint8_t protocol;
-    uint16_t tcp_length;
-} pseudo_tcp_header;
+    const char *host;
+    uint32_t end_port;
+    float timeout;
+    uint16_t *user_ports;
+    size_t num_ports;
+} scan_config;
 
-uint32_t get_source_addr(const char *host);
-unsigned short csum(unsigned short *ptr, int nbytes);
-uint16_t *parse_ports(char *port_str, size_t *out_count);
+int create_raw_socket();
+void build_ip_header(struct iphdr *ip_header, uint32_t source_addr,
+                     uint32_t dest_addr);
+void build_tcp_header(struct tcphdr *tcp_header, uint32_t dest_port);
+void calculate_tcp_checksum(struct tcphdr *tcp_header, uint32_t source_addr,
+                            uint32_t dest_addr);
 
 #endif
