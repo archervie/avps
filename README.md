@@ -6,7 +6,7 @@ avps is a high-performance, multithreaded IPv4 port scanner written in C. It use
 
 - **Multithreaded Execution:** Automatically detects the number of available CPU cores and spawns optimized worker threads to maximize scanning throughput.
 - **Multiple Scan Modes:**
-  - TCP Connect Scan (`-m connect`): Completes the full TCP three-way handshake using standard system socket APIs.
+  - TCP Connect Scan (`-m connect`): Completes the full TCP three-way handshake using standard system socket APIs. This is the default mode if the mode is not specified.
   - TCP SYN Scan (`-m syn`): Constructs raw IPv4 and TCP SYN packets to identify open ports without completing the full connection, minimizing logs on the target system (requires root/sudo to run).
   - TCP FIN Scan (`-m fin`): Constructs raw IPv4 and TCP FIN packets to find any open or filtered ports (requires root/sudo to run).
   - TCP Null Scan (`-m null`): Constructs raw IPv4 and TCP packets with no flags set to find any open or filtered ports (requires root/sudo to run). 
