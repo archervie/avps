@@ -46,7 +46,7 @@ Scan all 65,535 ports on a local router with a shortened timeout:
 
 ## 6. Real-World Testing
 
-If you wish to go beyond your LAN, below are some real-world services you can use `avps` on to test:
+If you wish to go beyond your LAN, below are some real-world services you can use `avps` on to test which are verified to allow scans:
 
 1. **scanme.nmap.org**: 45.33.32.156
 2. **testphp.vulnweb.com**: 44.228.249.3
