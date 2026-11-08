@@ -38,7 +38,7 @@ Scan your own machine for common web and SSH ports, hiding closed ports from the
 
 **The "Quiet Recon" (Remote)**
 Perform a stealth scan on the first 1024 ports of a remote server in your local network (requires `sudo`):
-`sudo ./bin/avps -m stealth -r 1-1024 192.168.1.50`
+`sudo ./bin/avps -m syn -r 1-1024 192.168.1.50`
 
 **The "Aggressive Sweep" (Local Network)**
 Scan all 65,535 ports on a local router with a shortened timeout:
