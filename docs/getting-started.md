@@ -7,7 +7,9 @@ This guide will walk you through compiling `avps` and running your first network
 As of version 1.0, `avps` requires you to explicitly declare the type of scan you want to perform using the `-m` or `--mode` flag. There are two options:
 
 - **Connect (`-m connect`):** Performs a full TCP three-way handshake with the host at every visited port. This does not require root privileges, but it is highly likely to be noticed and logged by the target system.
-- **Stealth (`-m stealth`):** Sends only a SYN flag to the host to pretend to initialize a connection. The scanner checks if the host sends a corresponding SYN-ACK flag and records the result. This is much less likely to be logged, but **requires root privileges (sudo)** to execute.
+- **SYN (`-m syn`):** Sends only a SYN flag to the host to pretend to initialize a connection. The scanner checks if the host sends a corresponding SYN-ACK flag and records the result. This is much less likely to be logged, but requires **root privileges (sudo)** to execute.
+- **FIN (`-m fin`):** Sends only a FIN flag to the host. The scan checks for the corresponding RST flag, but marks down the port as open or filtered if no response is received within the timeout. This also requires **root**.
+- **Null (`-m null`):** Sends a TCP packet with no flags set to the host. The results are similar to the FIN scan, and requires **root**.
 
 ## 2. Define Your Targets
 
@@ -28,13 +30,13 @@ For wide or remote scans, you can adjust the scanner's behavior to suit your net
 The scanner requires you specify a host (does not require an option flag) at the end of the command. The host is represented by an IPv4 address.
 
 - It is **required** to have explicit permission to scan the host network, as doing so without authorization can appear as the reconnissance stage of a cyberattack, and have your IP address permanently blacklisted by the service's firewall, even if that was not the intent.
-  _(Note: While IPv6 and web address support is currently on the list of things to add, they are currently not supported)._
+  _(Note: While IPv6 support and DNS resolution are currently on the list of things to add, they are currently not supported)._
 
 ## 5. Example LAN Workflows
 
 **The "Quick Check" (Localhost)**
 Scan your own machine for common web and SSH ports, hiding closed ports from the output:
-`./bin/avps -m connect -k 22,80,443,8080 -s 127.0.0.1`
+`./bin/avps -k 22,80,443,8080 -s 127.0.0.1`
 
 **The "Quiet Recon" (Remote)**
 Perform a stealth scan on the first 1024 ports of a remote server in your local network (requires `sudo`):

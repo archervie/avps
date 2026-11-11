@@ -48,3 +48,13 @@ The core engines rely on several helper functions defined in `scan_utils.c` and 
 - **Checksum Math**: The `csum()` function implements the standard 16-bit one's complement sum required by TCP/IP protocols to validate data integrity across the pseudo-header.
 - **Port Parsing**: The `parse_ports()` function uses `strtok()` to split comma-separated port strings, dynamically allocating and reallocating memory for a `uint16_t` array as it converts the tokens into integers.
 - **Scan Utilities**: `scan_utils.c` consists of various functions that centralize repetitive tasks into a singular function call, such as `create_raw_socket()`, `build_ip_header()`, `build_tcp_header()`, and `calculate_tcp_checksum()`.
+
+## Contribute to avps
+
+To begin, if you'd like to contribute, then let me (a5v) extend you a thanks in doing so. This is still a novice project, so any contributions are welcome! Furthermore, contributing here is quite lax compared to usual.
+
+**Local Setup**: Simply fork the project and clone that to begin making the changes you'd like to make. No external dependencies are required aside from C and Make.
+**Making Changes**: Create a branch that reflects what you plan to add or change. Try to keep strictly to the issue you're resolving.
+**Code Commenting**: It's preferable to comment on all changes made to ensure code readability, and updating the documentation to reflect those changes.
+**Testing Code**: C code can be crazy at times, so make sure to test your code locally first. Common ports are `127.0.0.1`, `127.0.0.4`, or `192.168.1.1`. You are also free to use the ports listed under `getting-started.md`.
+**Submit a Pull Request**: Create a pull request when you're done. It'll be reviewed and feedback will be provided, and the change possibly pulled into `main`.
