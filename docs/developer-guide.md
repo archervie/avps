@@ -2,6 +2,8 @@
 
 The `avps` port scanner is designed for high performance through concurrent execution and low-level socket manipulation. This guide details the internal implementation of the two primary scanning engines: the connect scanner and the stealth scanner.
 
+---
+
 ## Threading and Dispatch Model
 
 Both scanning engines rely on POSIX threads and atomic variables to distribute workloads efficiently without the overhead of mutex locks.
@@ -48,3 +50,19 @@ The core engines rely on several helper functions defined in `scan_utils.c` and 
 - **Checksum Math**: The `csum()` function implements the standard 16-bit one's complement sum required by TCP/IP protocols to validate data integrity across the pseudo-header.
 - **Port Parsing**: The `parse_ports()` function uses `strtok()` to split comma-separated port strings, dynamically allocating and reallocating memory for a `uint16_t` array as it converts the tokens into integers.
 - **Scan Utilities**: `scan_utils.c` consists of various functions that centralize repetitive tasks into a singular function call, such as `create_raw_socket()`, `build_ip_header()`, `build_tcp_header()`, and `calculate_tcp_checksum()`.
+
+## Tests (`test/test_checksum.c` & `test/test_server.py`)
+
+You can run the two test scripts created for certain functions of the scanner. `test/test_checksum.c` tests the checksum calculations, while `test/test_server.py` tests the actual scanner outputs by creating a simple TCP server on a specific port. You can create the test binary for the checksum through `make test` and running `./bin/run_test`, and you can run `sudo python3 tests/test_server.py` for the server test. You are free to create more tests or update the current test scripts to reflect any changes.
+
+---
+
+## Contribute to avps
+
+To begin, if you'd like to contribute, then let me (a5v) extend you a thanks in doing so. This is still a novice project, so any contributions are welcome! Furthermore, contributing here is quite lax compared to usual.
+
+**Local Setup**: Simply fork the project and clone that to begin making the changes you'd like to make. No external dependencies are required aside from C and Make.
+**Making Changes**: Create a branch that reflects what you plan to add or change. Try to keep strictly to the issue you're resolving.
+**Code Commenting**: It's preferable to comment on all changes made to ensure code readability, and updating the documentation to reflect those changes.
+**Testing Code**: C code can be crazy at times, so make sure to test your code locally first. Common ports are `127.0.0.1`, `127.0.0.4`, or `192.168.1.1`. You can also run the test scripts under `tests/`.
+**Submit a Pull Request**: Create a pull request when you're done. It'll be reviewed and feedback will be provided, and the change possibly pulled into `main`.
