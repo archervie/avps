@@ -6,7 +6,7 @@ import time
 TARGET_HOST = "127.0.0.1"
 OPEN_PORT = 55555
 CLOSED_PORT = 55556
-SCANNER_BIN = "./bin/avps"
+SCANNER_BIN = "../bin/avps"
 
 
 class LocalTestServer:
@@ -51,57 +51,55 @@ class LocalTestServer:
             self.thread.join(timeout=1.0)
 
 
-def run_scanner_test():
+def run_scanner_test(mode: str) -> None:
+    # Runs the scan on the local server; type of scan
+    # depends on input
+    print(f"Running scan with mode {mode}...")
+    cmd = [
+        SCANNER_BIN,
+        "-m",
+        mode,
+        "-k",
+        f"{OPEN_PORT},{CLOSED_PORT}",
+        TARGET_HOST,
+    ]
+
+    print(f"Executing scanner: {' '.join(cmd)}")
+    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    output = result.stdout + result.stderr
+    print("\nScanner Output:\n")
+    print(output.strip())
+    open_detected = (
+        f"Connection successful on port {OPEN_PORT}" in output
+        or f"SYN-ACK received on port {OPEN_PORT}" in output
+        or f"No RST received on port {OPEN_PORT}" in output
+    )
+    closed_detected = (
+        f"Connection failed on port {CLOSED_PORT}" in output
+        or f"RST received on port {CLOSED_PORT}" in output
+    )
+    print("\n")
+    if open_detected:
+        print(f"[PASS] Port {OPEN_PORT} was correctly identified as OPEN.")
+    else:
+        print(f"[FAIL] Port {OPEN_PORT} was NOT detected as open.")
+    if closed_detected:
+        print(f"[PASS] Port {CLOSED_PORT} was correctly identified as CLOSED.")
+    else:
+        print(f"[FAIL] Port {CLOSED_PORT} was NOT detected as closed.")
+
+    print("--------")
+
+
+if __name__ == "__main__":
     print(f"Starting local TCP test server on {TARGET_HOST}:{OPEN_PORT}...")
     server = LocalTestServer(TARGET_HOST, OPEN_PORT)
     server.start()
 
-    try:
-        # Example invocation: adapt command-line arguments to match your avps CLI flags
-        # e.g., scanning ports 55555 and 55556 on 127.0.0.1
-        cmd = [
-            SCANNER_BIN,
-            "-m",
-            "syn",
-            "-k",
-            f"{OPEN_PORT},{CLOSED_PORT}",
-            TARGET_HOST,
-        ]
+    run_scanner_test("connect")
+    run_scanner_test("syn")
+    run_scanner_test("fin")
+    run_scanner_test("null")
 
-        print(f"Executing scanner: {' '.join(cmd)}")
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-
-        output = result.stdout + result.stderr
-        print("\nScanner Output:\n")
-        print(output.strip())
-
-        open_detected = (
-            f"Connection successful on port {OPEN_PORT}" in output
-            or f"SYN-ACK received on port {OPEN_PORT}" in output
-            or f"No RST received on port {OPEN_PORT}" in output
-        )
-
-        closed_detected = (
-            f"Connection failed on port {CLOSED_PORT}" in output
-            or f"RST received on port {CLOSED_PORT}" in output
-        )
-
-        print("\n")
-
-        if open_detected:
-            print(f"[PASS] Port {OPEN_PORT} was correctly identified as OPEN.")
-        else:
-            print(f"[FAIL] Port {OPEN_PORT} was NOT detected as open.")
-
-        if closed_detected:
-            print(f"[PASS] Port {CLOSED_PORT} was correctly identified as CLOSED.")
-        else:
-            print(f"[FAIL] Port {CLOSED_PORT} was NOT detected as closed.")
-
-    finally:
-        print("Stopping test server...")
-        server.stop()
-
-
-if __name__ == "__main__":
-    run_scanner_test()
+    print("Stopping test server...")
+    server.stop()
