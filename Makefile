@@ -1,5 +1,10 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -O2 -pthread -g -Iinclude
+
+INC_DIR = include
+INC_DIRS = $(shell find $(INC_DIR) -type d)
+INC_FLAGS = $(addprefix -I,$(INC_DIRS))
+
+CFLAGS = -Wall -Wextra -Werror -O2 -pthread -g $(INC_FLAGS)
 
 SRC_DIR = src
 TEST_DIR = tests
