@@ -30,7 +30,7 @@ class LocalTestServer:
         # Brief pause to ensure socket is ready
         time.sleep(0.1)
 
-    def _listen_loop(self):
+    def _listen_loop(self) -> None:
         while self.running:
             try:
                 if self.sock:
@@ -43,7 +43,7 @@ class LocalTestServer:
             except OSError:
                 break
 
-    def stop(self):
+    def stop(self) -> None:
         self.running = False
         if self.sock:
             self.sock.close()
