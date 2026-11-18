@@ -1,15 +1,15 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef CORE_UTILS_H
+#define CORE_UTILS_H
 
 #include <stdint.h>
 #include <unistd.h>
 
 typedef struct {
-  uint32_t source_address;
-  uint32_t dest_address;
-  uint8_t placeholder;
-  uint8_t protocol;
-  uint16_t tcp_length;
+    uint32_t source_address;
+    uint32_t dest_address;
+    uint8_t placeholder;
+    uint8_t protocol;
+    uint16_t tcp_length;
 } pseudo_tcp_header;
 
 void print_err_msg(char *name);

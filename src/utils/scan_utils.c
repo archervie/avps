@@ -1,14 +1,23 @@
-#include "utils.h"
+#include "core_utils.h"
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+int scan_results[65535] = {0};
+int successes = 0;
+int failures = 0;
+int filtered = 0;
+int timeouts = 0;
+atomic_int current_port = 0;
+atomic_size_t current_idx = 0;
 
 int create_raw_socket(void) {
     // This function creates a proper raw socket to be used

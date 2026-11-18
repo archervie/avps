@@ -7,3 +7,4 @@
 -Iinclude
 -Iinclude/scans
 -Iinclude/utils
+-Iinclude/threads

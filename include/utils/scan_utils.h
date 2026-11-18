@@ -7,8 +7,17 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+extern int scan_results[65536];
+extern int successes;
+extern int failures;
+extern int filtered;
+extern int timeouts;
+extern atomic_int current_port;
+extern atomic_size_t current_idx;
+
 typedef struct {
     const char *host;
+    int mode;
     uint32_t end_port;
     float timeout;
     uint16_t *user_ports;

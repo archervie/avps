@@ -15,11 +15,6 @@
 #include <sys/sysinfo.h>
 #include <unistd.h>
 
-static atomic_int current_port;
-static atomic_int successes, timeouts, failures = 0;
-static atomic_size_t current_idx = 0;
-static int scan_results[65535] = {0};
-
 void *connect_scanner_thread(void *arg) {
     int sockfd;
     scan_config *config = (scan_config *)arg;
@@ -83,21 +78,16 @@ void *connect_scanner_thread(void *arg) {
 
                 if (so_err == 0) {
                     scan_results[dest_port] = 1;
-                    atomic_fetch_add(&successes, 1);
                 } else {
                     scan_results[dest_port] = 2;
-                    atomic_fetch_add(&failures, 1);
                 }
             } else if (select_result == 0) {
-                scan_results[dest_port] = 3;
-                atomic_fetch_add(&timeouts, 1);
+                scan_results[dest_port] = 4;
             } else {
                 scan_results[dest_port] = 2;
-                atomic_fetch_add(&failures, 1);
             }
         } else if (status == 0) {
             scan_results[dest_port] = 1;
-            atomic_fetch_add(&successes, 1);
         }
         close(sockfd);
     }
@@ -136,7 +126,7 @@ void connect_scanner(const char *host, uint32_t start_port, uint32_t end_port,
                 printf("Connection successful on port %d\n", port);
             } else if (scan_results[port] == 2 && !success_only) {
                 fprintf(stderr, "Connection failed on port %d\n", port);
-            } else if (scan_results[port] == 3 && !success_only) {
+            } else if (scan_results[port] == 4 && !success_only) {
                 fprintf(stderr, "Connection timed out on port %d\n", port);
             }
         }
@@ -147,7 +137,7 @@ void connect_scanner(const char *host, uint32_t start_port, uint32_t end_port,
                 printf("Connection successful on port %d\n", port);
             } else if (scan_results[port] == 2 && !success_only) {
                 fprintf(stderr, "Connection failed on port %d\n", port);
-            } else if (scan_results[port] == 3 && !success_only) {
+            } else if (scan_results[port] == 4 && !success_only) {
                 fprintf(stderr, "Connection timed out on port %d\n", port);
             }
         }
