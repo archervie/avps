@@ -76,10 +76,6 @@ void *sender_thread(void *arg) {
                 sent = 1;
             }
         }
-
-        // Add a tiny baseline delay (e.g., 500 microseconds) to rate-limit the
-        // scanner and prevent it from constantly hitting the buffer limit.
-        usleep(500);
     }
     close(sockfd);
     return NULL;
