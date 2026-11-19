@@ -51,7 +51,13 @@ void *sender_thread(void *arg) {
         build_ip_header(ip_header, source_addr, dest_addr);
         build_tcp_header(tcp_header, dest_port);
 
-        tcp_header->syn = 1;
+        switch (config->mode) {
+        case 1:
+            tcp_header->syn = 1;
+            break;
+        case 2:
+            tcp_header->fin = 1;
+        }
 
         calculate_tcp_checksum(tcp_header, source_addr, dest_addr);
 
@@ -77,6 +83,7 @@ void *sender_thread(void *arg) {
             }
         }
     }
+    sender_done = 1;
     close(sockfd);
     return NULL;
 }

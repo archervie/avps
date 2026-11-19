@@ -37,8 +37,8 @@ void fin_scanner(const char *host, uint32_t start_port, uint32_t end_port,
 
     pthread_t threads[2];
 
-    pthread_create(&threads[0], NULL, sender_thread, &config);
-    pthread_create(&threads[1], NULL, receiver_thread, &config);
+    pthread_create(&threads[0], NULL, receiver_thread, &config);
+    pthread_create(&threads[1], NULL, sender_thread, &config);
 
     for (int i = 0; i < 2; i++) {
         pthread_join(threads[i], NULL);

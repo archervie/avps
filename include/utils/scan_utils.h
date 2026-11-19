@@ -13,6 +13,7 @@ extern int failures;
 extern int filtered;
 extern int timeouts;
 extern atomic_int current_port;
+extern atomic_int sender_done;
 extern atomic_size_t current_idx;
 
 typedef struct {
@@ -25,6 +26,7 @@ typedef struct {
 } scan_config;
 
 int create_raw_socket();
+int create_recv_socket(int protocol);
 void build_ip_header(struct iphdr *ip_header, uint32_t source_addr,
                      uint32_t dest_addr);
 void build_tcp_header(struct tcphdr *tcp_header, uint32_t dest_port);

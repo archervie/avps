@@ -17,6 +17,7 @@ int failures = 0;
 int filtered = 0;
 int timeouts = 0;
 atomic_int current_port = 0;
+atomic_int sender_done = 0;
 atomic_size_t current_idx = 0;
 
 int create_raw_socket(void) {
@@ -38,6 +39,30 @@ int create_raw_socket(void) {
         perror("Setsockopt error");
         close(sockfd);
         exit(EXIT_FAILURE);
+    }
+
+    return sockfd;
+}
+
+int create_recv_socket(int protocol) {
+    int sockfd = socket(AF_INET, SOCK_RAW, protocol);
+    if (sockfd < 0) {
+        perror("Recv socket error");
+        return -1;
+    }
+
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    if (flags != -1) {
+        fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+    }
+
+    int rcvbuf_size = 4 * 1024 * 1024; // 4 MB
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUFFORCE, &rcvbuf_size,
+                   sizeof(rcvbuf_size)) < 0) {
+        if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &rcvbuf_size,
+                       sizeof(rcvbuf_size)) < 0) {
+            perror("Setsockopt SO_RCVBUF failed");
+        }
     }
 
     return sockfd;
